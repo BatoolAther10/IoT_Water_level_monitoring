@@ -1,0 +1,274 @@
+/* ========================================
+   NAVBAR STYLES WITH LOGO
+   ======================================== */
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 30px;
+  background: linear-gradient(135deg, #f17f34 0%, #46ef95 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  min-height: 70px;
+}
+
+/* ========================================
+   LEFT SIDE - LOGO AND TITLE
+   ======================================== */
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+}
+
+/* Logo Container */
+.navbar-logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 5px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.navbar-logo-container:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Logo Image */
+.navbar-logo-img {
+  max-width: 55px;
+  max-height: 55px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.navbar-logo-container:hover .navbar-logo-img {
+  transform: scale(1.1);
+}
+
+/* Title */
+.navbar-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ========================================
+   RIGHT SIDE - CONTROLS
+   ======================================== */
+
+.navbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* User Info */
+.user-info {
+  font-size: 14px;
+  opacity: 0.95;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Theme Toggle Button */
+.btn-theme {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn-theme:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: rotate(20deg);
+}
+
+.btn-theme:active {
+  transform: rotate(20deg) scale(0.95);
+}
+
+/* Logout Button */
+.btn-logout {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background: rgba(255, 51, 51, 0.6);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 12px rgba(255, 51, 51, 0.3);
+}
+
+.btn-logout:active {
+  transform: scale(0.98);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+/* Tablet */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 12px 20px;
+    min-height: 65px;
+  }
+
+  .navbar-left {
+    gap: 12px;
+  }
+
+  .navbar-logo-container {
+    width: 50px;
+    height: 50px;
+    padding: 4px;
+  }
+
+  .navbar-logo-img {
+    max-width: 45px;
+    max-height: 45px;
+  }
+
+  .navbar-title {
+    font-size: 18px;
+  }
+
+  .navbar-controls {
+    gap: 12px;
+  }
+
+  .user-info {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .btn-theme,
+  .btn-logout {
+    font-size: 12px;
+    padding: 8px 16px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .navbar {
+    padding: 10px 15px;
+    min-height: 60px;
+  }
+
+  .navbar-left {
+    gap: 10px;
+  }
+
+  .navbar-logo-container {
+    width: 45px;
+    height: 45px;
+    padding: 3px;
+    border-radius: 6px;
+  }
+
+  .navbar-logo-img {
+    max-width: 40px;
+    max-height: 40px;
+  }
+
+  .navbar-title {
+    font-size: 16px;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .navbar-controls {
+    gap: 8px;
+  }
+
+  .btn-logout {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}
+
+/* ========================================
+   DARK MODE
+   ======================================== */
+
+body.dark-mode .navbar {
+  background: linear-gradient(135deg, #f17f34 0%, #46ef95 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .navbar-logo-container {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .navbar-logo-container:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .user-info {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .btn-theme {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .btn-theme:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.dark-mode .btn-logout {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .btn-logout:hover {
+  background: rgba(255, 51, 51, 0.4);
+}

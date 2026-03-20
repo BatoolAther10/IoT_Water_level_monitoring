@@ -1,42 +1,81 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
+import './Navbar.css';
 
-const Navbar = ({ onToggleSidebar }) => {
+const Navbar = () => {
+  const { user, logout } = useContext(AuthContext);
+  const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
+  const navigate = useNavigate();
+
+  /**
+   * Handle user logout
+   * - Clear auth context
+   * - Remove tokens from localStorage
+   * - Redirect to login page
+   */
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  /**
+   * Toggle between light and dark mode
+   * - Updates theme context
+   * - Saves preference to localStorage
+   * - Updates document class for CSS theming
+   */
+  const handleThemeToggle = () => {
+    toggleDarkMode();
+  };
+
   return (
     <nav className="navbar">
+      {/* Left Side - Logo and Title */}
       <div className="navbar-left">
-        <button className="hamburger-btn" onClick={onToggleSidebar}>
-          <div className="hamburger-line"></div>
-          <div className="hamburger-line"></div>
-          <div className="hamburger-line"></div>
+        {/* College Logo */}
+        <div className="navbar-logo-container">
+          <img 
+            src="https://bajraionline.com/wp-content/uploads/2022/08/Vasavi-College-of-Engineering-logo.gif" 
+            alt="Vasavi College of Engineering Logo" 
+            className="navbar-logo-img"
+            title="Vasavi College of Engineering"
+          />
+        </div>
+
+        {/* App Title */}
+        <h1 className="navbar-title"> Water Tank Monitor</h1>
+      </div>
+
+      {/* Right Side Controls */}
+      <div className="navbar-controls">
+        {/* Dark Mode Toggle Button */}
+        <button
+          className="btn-theme"
+          onClick={handleThemeToggle}
+          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          aria-label="Toggle dark mode"
+        >
+          {isDarkMode ? '☀️' : '🌙'}
         </button>
-        
-        <div className="logo">
-          <img src="https://tse4.mm.bing.net/th/id/OIP.OQ6ucQ9Mfhg3t1WngxT2UgHaEM?pid=Api&P=0&h=180" alt="Logo" className="logo-img" />
-        </div>
+
+        {/* User Email Display */}
+        {user && (
+          <span className="user-info">
+            👤 {user.email}
+          </span>
+        )}
+
+        {/* Logout Button */}
+        <button
+          className="btn-logout"
+          onClick={handleLogout}
+          title="Logout from your account"
+        >
+          Logout
+        </button>
       </div>
-      
-      <div className="navbar-center">
-        <h1 className="navbar-title">IOT Dashboard</h1>
-      </div>
-      
-      {/* <div className="navbar-right">
-        <div className="notification-icon">
-          <svg 
-            width="24" 
-            height="24" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2"
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-          <span className="notification-badge">3</span>
-        </div>
-      </div> */}
     </nav>
   );
 };

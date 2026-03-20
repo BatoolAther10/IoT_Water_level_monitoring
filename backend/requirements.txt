@@ -1,6 +1,8 @@
-requests
-psycopg2-binary
 fastapi
 uvicorn
+psycopg2-binary
 pydantic
 python-dotenv
+requests
+tensorflow
+numpy

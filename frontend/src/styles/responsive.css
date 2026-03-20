@@ -1,0 +1,87 @@
+/* Tablet & Medium Screens */
+@media (max-width: 768px) {
+  /* Navbar */
+  .navbar {
+    flex-direction: column;
+    padding: 15px;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    left: -250px;
+    height: 100vh;
+    transition: left 0.3s;
+    z-index: 1000;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  /* Main content */
+  .main-content {
+    margin-left: 0;
+  }
+
+  /* Cards & Grids */
+  .card-container {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container {
+    height: 250px !important;
+  }
+
+  /* Tables */
+  table {
+    font-size: 12px;
+  }
+
+  table th,
+  table td {
+    padding: 8px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .navbar h1 {
+    font-size: 18px;
+  }
+
+  .navbar button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  .card h2 {
+    font-size: 18px;
+  }
+
+  .card-value {
+    font-size: 28px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group input,
+  .form-group select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .predictions-container {
+    grid-template-columns: 1fr;
+  }
+}

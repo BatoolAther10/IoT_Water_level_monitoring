@@ -1,63 +1,62 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import './Sidebar.css';
 
-const Sidebar = ({ isOpen, onClose }) => {
-  const navigate = useNavigate();
+const Sidebar = () => {
   const location = useLocation();
 
-  const handleNavigation = (path) => {
-    navigate(path);
-    onClose();
-  };
+  /**
+   * Menu items for sidebar navigation
+   * Each item has: path, label, and icon
+   */
+  const menuItems = [
+    {
+      path: '/',
+      label: 'Dashboard',
+      icon: '📊'
+    },
+    {
+      path: '/realtime',
+      label: 'Real-time',
+      icon: '⚡'
+    },
+    {
+      path: '/model-comparison',
+      label: 'Model Comparison',
+      icon: '🔄'
+    },
+    {
+      path: '/batch-prediction',
+      label: 'Batch Upload',
+      icon: '📤'
+    },
+    {
+      path: '/node-creation',
+      label: 'Add Node',
+      icon: '➕'
+    }
+  ];
 
   return (
-    <>
-      {isOpen && <div className="sidebar-overlay" onClick={onClose}></div>}
-      <div className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
-        <div className="sidebar-header">
-          <h3>Menu</h3>
-          <button className="close-btn" onClick={onClose}>×</button>
-        </div>
-        
-        <nav className="sidebar-nav">
-          <button
-            className={`sidebar-btn ${location.pathname === '/' ? 'active' : ''}`}
-            onClick={() => handleNavigation('/')}
-          >
-            <svg 
-              width="20" 
-              height="20" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2"
-            >
-              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-              <polyline points="9,22 9,12 15,12 15,22" />
-            </svg>
-            Home
-          </button>
-          
-          <button
-            className={`sidebar-btn ${location.pathname === '/node-creation' ? 'active' : ''}`}
-            onClick={() => handleNavigation('/node-creation')}
-          >
-            <svg 
-              width="20" 
-              height="20" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
-            </svg>
-            Node Creation
-          </button>
-        </nav>
-      </div>
-    </>
+    <aside className="sidebar">
+      {/* Sidebar Navigation Items */}
+      {menuItems.map((item) => (
+        <Link
+          key={item.path}
+          to={item.path}
+          className={`sidebar-item ${
+            location.pathname === item.path ? 'active' : ''
+          }`}
+          title={item.label}
+        >
+          {/* Icon */}
+          <span className="icon">{item.icon}</span>
+
+          {/* Label */}
+          <span>{item.label}</span>
+        </Link>
+      ))}
+    </aside>
   );
 };
 

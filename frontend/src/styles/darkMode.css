@@ -1,0 +1,57 @@
+body.dark-mode {
+  background-color: #191c64;
+  color: #e0e0e0;
+}
+
+body.dark-mode .navbar,
+body.dark-mode .sidebar,
+body.dark-mode .card,
+body.dark-mode .auth-card,
+body.dark-mode .upload-section,
+body.dark-mode .results-section,
+body.dark-mode .best-model-card {
+  background-color: #0a0557;
+  color: #e0e0e0;
+}
+
+body.dark-mode .navbar,
+body.dark-mode .sidebar {
+  border-bottom-color: #9c4949;
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+  background-color: #4d8b4f;
+  color: #e0e0e0;
+  border-color: #97a368;
+}
+
+body.dark-mode input:focus,
+body.dark-mode select:focus,
+body.dark-mode textarea:focus {
+  border-color: #010517;
+}
+
+body.dark-mode table {
+  background-color: #4f3b80;
+  color: #e0e0e0;
+}
+
+body.dark-mode table th {
+  background-color: #483d81;
+}
+
+body.dark-mode table td,
+body.dark-mode table th {
+  border-color: #3755a5;
+}
+
+body.dark-mode .chart {
+  background-color: #0d0d76;
+}
+
+body.dark-mode .status-bar,
+body.dark-mode .predictions-list {
+  background-color: #191bb0;
+}
