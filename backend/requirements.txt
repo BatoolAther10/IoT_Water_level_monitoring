@@ -3,7 +3,7 @@ setuptools>=65
 wheel
 fastapi
 uvicorn
-numpy==1.25.2
+numpy==1.24.3
 pandas==2.1.1
 tensorflow-cpu==2.13.0
 requests==2.32.5
