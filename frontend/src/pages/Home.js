@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import axios from 'axios';
 import config from '../config';
@@ -11,12 +11,8 @@ const Home = () => {
   const [temperature, setTemperature] = useState(0);
   const [waterLevelData, setWaterLevelData] = useState([]);
   const [temperatureData, setTemperatureData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [selectedNode, setSelectedNode] = useState('');
-  const [hasDataForNode, setHasDataForNode] = useState(true);
-  const [nodeDataMessage, setNodeDataMessage] = useState('');
 
   const [prediction, setPrediction] = useState(null);
   const [confidence, setConfidence] = useState(null);
@@ -38,22 +34,18 @@ const Home = () => {
   // -------------------------
   // FETCH SENSOR DATA
   // -------------------------
-  const fetchSensorData = async () => {
+  const fetchSensorData = useCallback(async () => {
+    if (!selectedNode) return;
     try {
-      setLoading(true);
-
       const response = await axios.get(config.SENSOR_DATA_URL);
       const allSensorData = response.data || [];
 
       const actualNodeId = getActualTankId(selectedNode);
-
       const sensorData = allSensorData.filter(
         (item) => item.node_id === actualNodeId
       );
 
       if (sensorData.length > 0) {
-        setHasDataForNode(true);
-
         const latest = sensorData[0];
 
         const selectedNodeData = nodes.find(n => n.id === selectedNode);
@@ -66,7 +58,6 @@ const Home = () => {
 
         setWaterLevel(waterLevelPercentage);
         setTemperature(Math.round(latest.temperature * 10) / 10);
-        setLastUpdated(new Date(latest.created_at));
 
         const reversed = [...sensorData].reverse();
 
@@ -89,7 +80,6 @@ const Home = () => {
         );
 
       } else {
-        setHasDataForNode(false);
         setWaterLevel(0);
         setTemperature(0);
         setWaterLevelData([]);
@@ -98,16 +88,13 @@ const Home = () => {
 
     } catch (error) {
       console.error(error);
-      setHasDataForNode(false);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [selectedNode, nodes]);
 
   // -------------------------
-  // ✅ NEW PREDICTION FETCH
+  // FETCH PREDICTION
   // -------------------------
-  const fetchPrediction = async () => {
+  const fetchPrediction = useCallback(async () => {
     if (!selectedNode) return;
 
     setPredictionLoading(true);
@@ -119,7 +106,6 @@ const Home = () => {
       );
 
       const allPredictions = response.data || [];
-
       const actualNodeId = getActualTankId(selectedNode);
 
       const nodePredictions = allPredictions.filter(
@@ -127,18 +113,13 @@ const Home = () => {
       );
 
       if (nodePredictions.length > 0) {
-
-        // SORT latest first
         const sorted = nodePredictions.sort(
           (a, b) => new Date(b.created_at) - new Date(a.created_at)
         );
 
         const latest = sorted[0];
-
         setPrediction(latest.prediction);
         setConfidence(Math.round(latest.confidence * 100));
-        setLastUpdated(new Date(latest.created_at));
-
       } else {
         setPrediction(null);
         setConfidence(null);
@@ -151,12 +132,12 @@ const Home = () => {
     } finally {
       setPredictionLoading(false);
     }
-  };
+  }, [selectedNode]);
 
   // -------------------------
   // FETCH NODES
   // -------------------------
-  const fetchNodes = async () => {
+  const fetchNodes = useCallback(async () => {
     try {
       const res = await axios.get(config.TANK_PARAMETERS_URL);
 
@@ -175,21 +156,21 @@ const Home = () => {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [selectedNode]);
 
   // -------------------------
   // EFFECTS
   // -------------------------
   useEffect(() => {
     fetchNodes();
-  }, []);
+  }, [fetchNodes]);
 
   useEffect(() => {
     if (selectedNode) {
       fetchSensorData();
       fetchPrediction();
     }
-  }, [selectedNode]);
+  }, [selectedNode, fetchSensorData, fetchPrediction]);
 
   // auto refresh
   useEffect(() => {
@@ -199,7 +180,7 @@ const Home = () => {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [selectedNode]);
+  }, [fetchSensorData, fetchPrediction]);
 
   // -------------------------
   // CHART DATA
@@ -232,7 +213,7 @@ const Home = () => {
       <h3>Water Level: {waterLevel}%</h3>
       <h3>Temperature: {temperature}°C</h3>
 
-      {/* ✅ PREDICTION CARD */}
+      {/* PREDICTION CARD */}
       <div>
         <h3>Prediction</h3>
         <p>{predictionLoading ? 'Loading...' : prediction}</p>
