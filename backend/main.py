@@ -160,7 +160,7 @@ NODE_ID = os.environ.get("NODE_ID", "NODE_001")
 DATA_COLLECTION_INTERVAL = int(os.environ.get("DATA_COLLECTION_INTERVAL", "20"))
 THINGSPEAK_URL = os.environ.get(
     "THINGSPEAK_URL",
-    "https://api.thingspeak.com/channels/3290444/feeds.json?api_key=AWP8F08WA7SLO5EQ&results=-1"
+    "https://api.thingspeak.com/channels/3120638/feeds.json?api_key=CXEN9P2CMZ1HOJDL&results=-1"
 )
 
 # ==============================
