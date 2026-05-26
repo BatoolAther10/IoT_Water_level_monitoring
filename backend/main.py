@@ -159,7 +159,7 @@ TEST_MODE = os.environ.get("TEST_MODE", "True").lower() == "true"
 NODE_ID = os.environ.get("NODE_ID", "NODE_001")
 DATA_COLLECTION_INTERVAL = int(os.environ.get("DATA_COLLECTION_INTERVAL", "20"))
 THINGSPEAK_URL = os.environ.get(
-    "THINGSPEAK_URL"
+    "THINGSPEAK_URL","https://api.thingspeak.com/channels/3120638/feeds.json?api_key=CXEN9P2CMZ1HOJDL&results=-1"
 )
 
 # ==============================
