@@ -56,15 +56,6 @@ MODEL_INFO = {
     "classes": MODEL_CLASSES
 }
 
-# Track data source
-data_source_stats = {
-    "thingspeak_success": 0,
-    "thingspeak_failures": 0,
-    "test_data_used": 0,
-    "last_error": None,
-    "current_mode": "UNKNOWN"
-}
-
 # ==============================
 # DATABASE
 # ==============================
@@ -92,7 +83,6 @@ def create_tables():
         node_id VARCHAR(50),
         field1 FLOAT,
         field2 FLOAT,
-        data_source VARCHAR(20) DEFAULT 'unknown',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
@@ -127,7 +117,6 @@ def create_tables():
     # Create indexes for faster queries
     cur.execute("CREATE INDEX IF NOT EXISTS idx_sensor_node ON sensor_data(node_id)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_sensor_time ON sensor_data(created_at DESC)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_sensor_source ON sensor_data(data_source)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_pred_node ON predictions(node_id)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_pred_time ON predictions(created_at DESC)")
 
@@ -166,16 +155,13 @@ def load_ml_model():
 # CONFIG
 # ==============================
 
-# IMPORTANT: Set TEST_MODE to False to read actual sensor data from ThingSpeak
-TEST_MODE = os.environ.get("TEST_MODE", "false").lower() == "true"
-
+TEST_MODE = os.environ.get("TEST_MODE", "False").lower() == "true"
 NODE_ID = os.environ.get("NODE_ID", "NODE_001")
 DATA_COLLECTION_INTERVAL = int(os.environ.get("DATA_COLLECTION_INTERVAL", "20"))
 THINGSPEAK_URL = os.environ.get(
     "THINGSPEAK_URL",
-    "https://api.thingspeak.com/channels/3120638/feeds.json?api_key=CXEN9P2CMZ1HOJDL&results=5"
+    "https://api.thingspeak.com/channels/3120638/feeds.json?api_key=CXEN9P2CMZ1HOJDL&results=2"
 )
-THINGSPEAK_TIMEOUT = int(os.environ.get("THINGSPEAK_TIMEOUT", "15"))
 
 # ==============================
 # PYDANTIC MODELS
@@ -261,89 +247,6 @@ def generate_test_data():
     }
 
 
-def fetch_thingspeak_data():
-    """
-    Fetch data from ThingSpeak API
-    Returns: (success: bool, distance: float, temperature: float, error_msg: str)
-    """
-    try:
-        print(f"[THINGSPEAK] Fetching from: {THINGSPEAK_URL[:80]}...")
-        response = requests.get(THINGSPEAK_URL, timeout=THINGSPEAK_TIMEOUT)
-        response.raise_for_status()
-        
-        data = response.json()
-        
-        # Validate response structure
-        if not isinstance(data, dict):
-            error_msg = f"Invalid response type: {type(data)}"
-            print(f"[THINGSPEAK] ✗ {error_msg}")
-            return False, 0, 0, error_msg
-        
-        if "feeds" not in data or not data["feeds"]:
-            error_msg = "No feeds in response - channel may be empty"
-            print(f"[THINGSPEAK] ✗ {error_msg}")
-            return False, 0, 0, error_msg
-        
-        # Get latest feed
-        feed = data["feeds"][0]
-        
-        # Extract and validate field1 (distance)
-        field1_raw = feed.get("field1")
-        if field1_raw is None or field1_raw == "":
-            error_msg = f"field1 is empty/null: {field1_raw}"
-            print(f"[THINGSPEAK] ✗ {error_msg}")
-            return False, 0, 0, error_msg
-        
-        try:
-            distance = float(field1_raw)
-        except ValueError as e:
-            error_msg = f"field1 not a valid number: {field1_raw}"
-            print(f"[THINGSPEAK] ✗ {error_msg}")
-            return False, 0, 0, error_msg
-        
-        # Extract and validate field2 (temperature)
-        field2_raw = feed.get("field2")
-        if field2_raw is None or field2_raw == "":
-            error_msg = f"field2 is empty/null: {field2_raw}"
-            print(f"[THINGSPEAK] ✗ {error_msg}")
-            return False, 0, 0, error_msg
-        
-        try:
-            temperature = float(field2_raw)
-        except ValueError as e:
-            error_msg = f"field2 not a valid number: {field2_raw}"
-            print(f"[THINGSPEAK] ✗ {error_msg}")
-            return False, 0, 0, error_msg
-        
-        print(f"[THINGSPEAK] ✓ Retrieved: distance={distance}, temp={temperature}")
-        return True, distance, temperature, None
-    
-    except requests.exceptions.Timeout:
-        error_msg = f"Request timeout ({THINGSPEAK_TIMEOUT}s) - ThingSpeak unreachable"
-        print(f"[THINGSPEAK] ✗ {error_msg}")
-        return False, 0, 0, error_msg
-    
-    except requests.exceptions.ConnectionError as e:
-        error_msg = f"Connection error: {str(e)[:100]}"
-        print(f"[THINGSPEAK] ✗ {error_msg}")
-        return False, 0, 0, error_msg
-    
-    except requests.exceptions.HTTPError as e:
-        error_msg = f"HTTP error: {e.response.status_code} - {e.response.reason}"
-        print(f"[THINGSPEAK] ✗ {error_msg}")
-        return False, 0, 0, error_msg
-    
-    except ValueError as e:
-        error_msg = f"Invalid JSON response: {str(e)[:100]}"
-        print(f"[THINGSPEAK] ✗ {error_msg}")
-        return False, 0, 0, error_msg
-    
-    except Exception as e:
-        error_msg = f"Unexpected error: {str(e)[:100]}"
-        print(f"[THINGSPEAK] ✗ {error_msg}")
-        return False, 0, 0, error_msg
-
-
 def preprocess_sensor_data(distance: float, temperature: float, time_features: list = None):
     
     # Normalize the data to 0-1 range
@@ -415,99 +318,53 @@ def save_prediction_to_db(node_id: str, distance: float, temperature: float,
         print(f"[DB] Error saving prediction: {e}")
 
 
-def save_sensor_data(node_id: str, distance: float, temperature: float, 
-                    data_source: str = "unknown", timestamp: str = None):
-    """Save sensor data to database with source tracking"""
-    if timestamp is None:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    try:
-        conn = get_connection()
-        cur = conn.cursor()
-        
-        cur.execute(
-            "INSERT INTO sensor_data (node_id, field1, field2, data_source, created_at) VALUES (%s, %s, %s, %s, %s)",
-            (node_id, distance, temperature, data_source, timestamp)
-        )
-        
-        conn.commit()
-        cur.close()
-        conn.close()
-        
-    except Exception as e:
-        print(f"[DB] Error saving sensor data: {e}")
-
-
 # ==============================
 # SENSOR DATA COLLECTOR
 # ==============================
 
 def sensor_collector():
-    """Background thread that continuously collects sensor data from ThingSpeak or test mode"""
-    print("\n[COLLECTOR] ========================================")
-    print(f"[COLLECTOR] TEST_MODE: {TEST_MODE}")
-    print(f"[COLLECTOR] Collection Interval: {DATA_COLLECTION_INTERVAL}s")
-    print(f"[COLLECTOR] Node ID: {NODE_ID}")
-    if not TEST_MODE:
-        print(f"[COLLECTOR] ThingSpeak Timeout: {THINGSPEAK_TIMEOUT}s")
-        # Mask API key for security
-        masked_url = THINGSPEAK_URL.replace(
-            THINGSPEAK_URL.split("api_key=")[1].split("&")[0] if "api_key=" in THINGSPEAK_URL else "",
-            "***MASKED***"
-        )
-        print(f"[COLLECTOR] URL: {masked_url[:80]}...")
-    print("[COLLECTOR] ========================================\n")
+    """Background thread that continuously collects sensor data"""
+    print("\n[COLLECTOR] Started\n")
 
     while True:
         try:
             if TEST_MODE:
-                # Generate synthetic test data
                 test_data = generate_test_data()
                 distance = test_data["distance"]
                 temperature = test_data["temperature"]
                 timestamp = test_data["timestamp"]
-                data_source = "TEST"
-                
-                print(f"[COLLECTOR] [TEST] distance={distance}cm, temp={temperature}°C")
-                data_source_stats["test_data_used"] += 1
-                data_source_stats["current_mode"] = "TEST_MODE"
-            
             else:
-                # Fetch real data from ThingSpeak
-                success, distance, temperature, error_msg = fetch_thingspeak_data()
-                
-                if success:
-                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    data_source = "THINGSPEAK"
-                    data_source_stats["thingspeak_success"] += 1
-                    data_source_stats["current_mode"] = "LIVE_DATA"
-                    print(f"[COLLECTOR] [LIVE] distance={distance}cm, temp={temperature}°C")
-                
-                else:
-                    # ThingSpeak failed, use test data as fallback
-                    data_source_stats["thingspeak_failures"] += 1
-                    data_source_stats["last_error"] = error_msg
+                try:
+                    response = requests.get(THINGSPEAK_URL, timeout=10)
+                    data = response.json()
                     
-                    print(f"[COLLECTOR] [FALLBACK] Using test data due to ThingSpeak error")
-                    test_data = generate_test_data()
-                    distance = test_data["distance"]
-                    temperature = test_data["temperature"]
-                    timestamp = test_data["timestamp"]
-                    data_source = "TEST_FALLBACK"
-                    data_source_stats["test_data_used"] += 1
-                    print(f"[COLLECTOR] [FALLBACK] distance={distance}cm, temp={temperature}°C")
+                    if not data.get("feeds"):
+                        time.sleep(DATA_COLLECTION_INTERVAL)
+                        continue
+                    
+                    feed = data["feeds"][0]
+                    distance = float(feed.get("field1", 0))
+                    temperature = float(feed.get("field2", 0))
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                except Exception as e:
+                    print(f"[COLLECTOR] Error: {e}")
+                    time.sleep(DATA_COLLECTION_INTERVAL)
+                    continue
 
-            # Save to database with source tracking
-            save_sensor_data(NODE_ID, distance, temperature, data_source, timestamp)
-            
-            # Print statistics every 10 collections
-            if (data_source_stats["thingspeak_success"] + data_source_stats["test_data_used"]) % 10 == 0:
-                print(f"[COLLECTOR] Stats - Live: {data_source_stats['thingspeak_success']}, "
-                      f"Test: {data_source_stats['test_data_used']}, "
-                      f"Errors: {data_source_stats['thingspeak_failures']}")
+            conn = get_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO sensor_data (node_id, field1, field2, created_at) VALUES (%s, %s, %s, %s)",
+                (NODE_ID, distance, temperature, timestamp)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+
+            print(f"[COLLECTOR] distance={distance}cm, temp={temperature}°C")
 
         except Exception as e:
-            print(f"[COLLECTOR] Unexpected error: {e}")
+            print(f"[COLLECTOR] Error: {e}")
 
         time.sleep(DATA_COLLECTION_INTERVAL)
 
@@ -517,26 +374,16 @@ def sensor_collector():
 # ==============================
 
 @app.get("/sensor-data", response_model=list[SensorReading], tags=["Sensor Data"])
-def get_sensor_data(node_id: str = None, source: str = None):
-    """Get sensor readings with optional filtering by node_id and data source"""
+def get_sensor_data(node_id: str = None):
+    """Get sensor readings with optional filtering by node_id"""
     try:
         conn = get_connection()
         cur = conn.cursor()
 
-        if node_id and source:
-            cur.execute(
-                "SELECT id, node_id, field1, field2, created_at FROM sensor_data WHERE node_id = %s AND data_source = %s ORDER BY created_at DESC LIMIT 100",
-                (node_id, source)
-            )
-        elif node_id:
+        if node_id:
             cur.execute(
                 "SELECT id, node_id, field1, field2, created_at FROM sensor_data WHERE node_id = %s ORDER BY created_at DESC LIMIT 100",
                 (node_id,)
-            )
-        elif source:
-            cur.execute(
-                "SELECT id, node_id, field1, field2, created_at FROM sensor_data WHERE data_source = %s ORDER BY created_at DESC LIMIT 100",
-                (source,)
             )
         else:
             cur.execute(
@@ -561,47 +408,6 @@ def get_sensor_data(node_id: str = None, source: str = None):
     except Exception as e:
         print(f"[API] Error: {e}")
         return []
-
-
-@app.get("/sensor-data/by-source", tags=["Sensor Data"])
-def get_sensor_data_by_source():
-    """Get sensor data summary grouped by source (LIVE vs TEST)"""
-    try:
-        conn = get_connection()
-        cur = conn.cursor()
-
-        cur.execute("""
-            SELECT 
-                data_source,
-                COUNT(*) as count,
-                AVG(field1) as avg_distance,
-                AVG(field2) as avg_temperature,
-                MAX(created_at) as last_reading
-            FROM sensor_data
-            GROUP BY data_source
-            ORDER BY last_reading DESC
-        """)
-
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-
-        return {
-            "summary": [
-                {
-                    "source": row[0],
-                    "count": row[1],
-                    "avg_distance": round(row[2], 2) if row[2] else 0,
-                    "avg_temperature": round(row[3], 2) if row[3] else 0,
-                    "last_reading": str(row[4])
-                }
-                for row in rows
-            ]
-        }
-
-    except Exception as e:
-        print(f"[API] Error: {e}")
-        return {"summary": []}
 
 
 # ==============================
@@ -672,7 +478,9 @@ def get_tank_parameters():
 
 @app.post("/api/v1/predict", response_model=PredictionResponse, tags=["ML Predictions"])
 def predict_water_activity(data: PredictionRequest):
+  
     
+   
     try:
         # Step 1: Preprocess input data
         result = make_prediction(data.distance, data.temperature, data.time_features)
@@ -768,7 +576,7 @@ def get_predictions_history(node_id: str = None, limit: int = 100):
 
 
 # ==============================
-# ENDPOINTS - SYSTEM & DIAGNOSTICS
+# ENDPOINTS - SYSTEM
 # ==============================
 
 @app.get("/health", tags=["System"])
@@ -797,26 +605,6 @@ def health_check():
         }
 
 
-@app.get("/diagnostics", tags=["System"])
-def get_diagnostics():
-    """Get system diagnostics and data collection statistics"""
-    return {
-        "test_mode": TEST_MODE,
-        "current_mode": data_source_stats["current_mode"],
-        "statistics": {
-            "thingspeak_successful": data_source_stats["thingspeak_success"],
-            "thingspeak_failures": data_source_stats["thingspeak_failures"],
-            "test_data_used": data_source_stats["test_data_used"],
-            "last_error": data_source_stats["last_error"]
-        },
-        "configuration": {
-            "node_id": NODE_ID,
-            "collection_interval_seconds": DATA_COLLECTION_INTERVAL,
-            "thingspeak_timeout_seconds": THINGSPEAK_TIMEOUT
-        }
-    }
-
-
 @app.get("/", tags=["System"])
 def root():
     """API information endpoint"""
@@ -826,9 +614,7 @@ def root():
         "description": "Backend with ML water activity prediction",
         "docs": "http://localhost:8000/docs",
         "health": "http://localhost:8000/health",
-        "diagnostics": "http://localhost:8000/diagnostics",
-        "ml_enabled": TF_AVAILABLE,
-        "test_mode": TEST_MODE
+        "ml_enabled": TF_AVAILABLE
     }
 
 
