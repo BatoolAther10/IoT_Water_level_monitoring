@@ -155,7 +155,7 @@ def load_ml_model():
 # CONFIG
 # ==============================
 
-TEST_MODE = os.environ.get("TEST_MODE", "").lower() == "true"
+TEST_MODE = os.environ.get("TEST_MODE", "False").lower() == "true"
 NODE_ID = os.environ.get("NODE_ID", "NODE_001")
 DATA_COLLECTION_INTERVAL = int(os.environ.get("DATA_COLLECTION_INTERVAL", "20"))
 THINGSPEAK_URL = os.environ.get(
